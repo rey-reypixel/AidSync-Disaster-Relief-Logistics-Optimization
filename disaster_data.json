@@ -1,0 +1,30 @@
+[
+    {
+        "city": "Kedarnath",
+        "district": "Rudraprayag",
+        "latitude": 30.7338877,
+        "longitude": 79.0669073,
+        "population_density": 50
+    },
+    {
+        "city": "Haldwani",
+        "district": "Nainital",
+        "latitude": 29.2144809,
+        "longitude": 79.5279012,
+        "population_density": 958
+    },
+    {
+        "city": "Joshimath",
+        "district": "Chamoli",
+        "latitude": 30.5555752,
+        "longitude": 79.5612607,
+        "population_density": 1454
+    },
+    {
+        "city": "Kedarnath",
+        "district": "Rudraprayag",
+        "latitude": 30.7338877,
+        "longitude": 79.0669073,
+        "population_density": 223
+    }
+]
