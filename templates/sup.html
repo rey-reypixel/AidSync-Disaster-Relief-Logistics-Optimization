@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Disaster Management Dashboard</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+  <div class="container py-5">
+    <h1 class="text-center mb-5 fw-bold text-primary">Disaster Management Dashboard</h1>
+
+    <!-- Disaster Heatmap Section -->
+    <div class="card mb-4 shadow">
+      <div class="card-header bg-primary text-white fw-semibold">🗺️ Generate Disaster Heatmap</div>
+      <div class="card-body">
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="heatmap-district" class="form-label">Select District</label>
+            <select id="heatmap-district" class="form-select">
+              <option value="">-- Select District --</option>
+              {% for district in districts %}
+              <option value="{{ district }}">{{ district }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label for="disaster" class="form-label">Disaster Type</label>
+            <select id="disaster" class="form-select">
+              <option value="">-- Select Disaster --</option>
+              {% for d in disasters %}
+              <option value="{{ d }}">{{ d.capitalize() }}</option>
+              {% endfor %}
+            </select>
+          </div>
+        </div>
+
+        <button onclick="generateHeatmap()" class="btn btn-success w-100">Generate Heatmap</button>
+
+        <div id="heatmap-result" class="mt-4" style="white-space: pre-line;"></div>
+        <img id="heatmap-img" class="img-fluid rounded shadow mt-3 d-none" style="max-height: 500px;">
+      </div>
+    </div>
+
+    <!-- Dijkstra Pathfinding Section -->
+    <div class="card shadow">
+      <div class="card-header bg-danger text-white fw-semibold">🚑 Find Nearest Relief Center (Dijkstra)</div>
+      <div class="card-body">
+
+        <div class="row mb-3">
+          <div class="col-md-6">
+            <label for="district" class="form-label">Select District</label>
+            <select id="district" class="form-select">
+              <option value="">-- Select District --</option>
+              {% for district in districts %}
+              <option value="{{ district }}">{{ district }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <div class="col-md-6">
+            <label for="city" class="form-label">Select City</label>
+            <select id="city" class="form-select">
+              <option value="">-- Select a District First --</option>
+            </select>
+          </div>
+        </div>
+
+        <button onclick="runDijkstra()" class="btn btn-danger w-100">Find Nearest Relief Center</button>
+
+        <div id="result" class="mt-4" style="white-space: pre-line;"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const districtCities = JSON.parse(`{{ district_cities | safe }}`);
+
+    document.getElementById('district').addEventListener('change', function () {
+      const selectedDistrict = this.value;
+      const citySelect = document.getElementById('city');
+      citySelect.innerHTML = '';
+
+      if (districtCities[selectedDistrict]) {
+        districtCities[selectedDistrict].forEach(cityData => {
+          const city = cityData[0];
+          const option = document.createElement('option');
+          option.value = city;
+          option.textContent = city;
+          citySelect.appendChild(option);
+        });
+      }
+    });
+
+    function runDijkstra() {
+      const city = document.getElementById('city').value;
+      if (!city) {
+        alert("Please select a city first.");
+        return;
+      }
+
+      fetch('/find_path', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ city })
+      })
+        .then(res => res.json())
+        .then(data => {
+          const resultDiv = document.getElementById('result');
+          if (data.success) {
+            resultDiv.innerHTML =
+              `✅ Nearest Relief Center: ${data.relief_center}\n📏 Distance: ${data.distance_km.toFixed(2)} km\n🗺️ Map File: ${data.map_file} (opened in your browser)`;
+          } else {
+            resultDiv.innerHTML = `❌ ${data.error}`;
+          }
+        })
+        .catch(err => {
+          console.error("Fetch error:", err);
+          alert("Something went wrong.");
+        });
+    }
+
+    function generateHeatmap() {
+      const district = document.getElementById('heatmap-district').value;
+      const disaster = document.getElementById('disaster').value;
+
+      if (!district || !disaster) {
+        alert("Please select both district and disaster.");
+        return;
+      }
+
+      fetch('/generate_heatmap', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ district, disaster })
+      })
+        .then(response => response.json())
+        .then(data => {
+          const img = document.getElementById('heatmap-img');
+          const resultDiv = document.getElementById('heatmap-result');
+
+          if (data.success) {
+            img.src = `data:image/png;base64,${data.plot_url}`;
+            img.classList.remove('d-none');
+            resultDiv.textContent = data.city_info;
+          } else {
+            img.classList.add('d-none');
+            resultDiv.innerHTML = `<span class="text-danger">❌ ${data.error}</span>`;
+          }
+        });
+    }
+  </script>
+
+</body>
+</html>
